@@ -2,8 +2,6 @@ import sqlite3
 from db.init_db import init_db
 from db.student import add_registration, finding_card
 
-# init_db()  # Commented out to preserve data
-
 print("Регистрация существующего студента на приемы пищи:")
 card_id = int(input("Введите ID карты студента: "))
 

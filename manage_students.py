@@ -1,8 +1,6 @@
 from db.init_db import init_db
 from db.student import get_all_students, update_student, delete_student
 
-# init_db()  # Commented out to preserve data
-
 def display_students():
     students = get_all_students()
     print("Список студентов:")
