@@ -233,12 +233,10 @@ class AttendanceSystemGUI:
             return
 
         try:
-            card_id = int(card_id_str)
+            card_id = card_id_str
             add_student(name, card_id, group)
             messagebox.showinfo("Успех", f"Студент {name} из группы {group} добавлен с картой {card_id}")
             self.load_students()
-        except ValueError:
-            messagebox.showerror("Ошибка", "ID карты должен быть числом")
         except Exception as e:
             messagebox.showerror("Ошибка", f"Не удалось добавить студента: {str(e)}")
 
@@ -257,12 +255,10 @@ class AttendanceSystemGUI:
         card_id_str = simpledialog.askstring("Изменить студента", "Новый ID карты:", initialvalue=str(current_card))
 
         try:
-            card_id = int(card_id_str) if card_id_str else None
+            card_id = card_id_str if card_id_str else None
             update_student(student_id, name, card_id, group)
             messagebox.showinfo("Успех", "Информация о студенте обновлена")
             self.load_students()
-        except ValueError:
-            messagebox.showerror("Ошибка", "ID карты должен быть числом")
         except Exception as e:
             messagebox.showerror("Ошибка", f"Не удалось обновить студента: {str(e)}")
 
@@ -351,7 +347,7 @@ class AttendanceSystemGUI:
 
                 if uid and name and group:
                     try:
-                        add_student(name, int(uid), group)
+                        add_student(name, str(uid), group)
                         added += 1
                     except sqlite3.IntegrityError:
                         # Skip if card_id already exists
@@ -371,7 +367,7 @@ class AttendanceSystemGUI:
             return
 
         try:
-            card_id = int(card_id_str)
+            card_id = card_id_str
             student_id = finding_card(card_id)
             if student_id:
                 # Get student name
@@ -385,8 +381,6 @@ class AttendanceSystemGUI:
             else:
                 self.student_info_label.config(text="Студент не найден")
                 self.current_reg_student_id = None
-        except ValueError:
-            messagebox.showerror("Ошибка", "ID карты должен быть числом")
         except Exception as e:
             messagebox.showerror("Ошибка", f"Ошибка поиска: {str(e)}")
 
@@ -581,15 +575,13 @@ class AttendanceSystemGUI:
             return
 
         try:
-            card_id = int(card_id_str)
+            card_id = card_id_str
             if check_student(card_id, self.current_meal_id):
                 student_id = finding_card(card_id)
                 log_attendance(student_id, self.current_meal_id, 'came')
                 self.attendance_result.config(text="ДОСТУП РАЗРЕШЕН", foreground="green")
             else:
                 self.attendance_result.config(text="ДОСТУП ЗАПРЕЩЕН", foreground="red")
-        except ValueError:
-            self.attendance_result.config(text="ID карты должен быть числом", foreground="red")
         except Exception as e:
             self.attendance_result.config(text=f"Ошибка: {str(e)}", foreground="red")
 
@@ -601,5 +593,3 @@ def main():
     root = tk.Tk()
     app = AttendanceSystemGUI(root)
     root.mainloop()
-
-

@@ -5,7 +5,7 @@ init_db()
 
 print("Добавление студента:")
 name = input("Имя студента: ")
-card_id = int(input("ID карты: "))
+card_id = input("ID карты: ")
 
 add_student(name, card_id)
 print(f"Студент {name} добавлен с картой {card_id}")

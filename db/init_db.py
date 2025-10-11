@@ -6,11 +6,12 @@ def init_db():
     conn.execute('PRAGMA foreign_keys = ON;')
     cursor = conn.cursor()
 
+    cursor.execute('DROP TABLE IF EXISTS students')
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS students (
+        CREATE TABLE students (
             id INTEGER PRIMARY KEY,
             name TEXT NOT NULL,
-            card_id INTEGER UNIQUE NOT NULL
+            card_id TEXT UNIQUE NOT NULL
         )
     ''')
 

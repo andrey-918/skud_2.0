@@ -14,7 +14,7 @@ if action == '1':
     student_id = int(input("Введите ID студента: "))
     name = input("Новое имя (оставьте пустым, если не менять): ")
     card_id_str = input("Новый ID карты (оставьте пустым, если не менять): ")
-    card_id = int(card_id_str) if card_id_str else None
+    card_id = card_id_str if card_id_str else None
     update_student(student_id, name if name else None, card_id)
     print("Информация обновлена.")
 elif action == '2':

@@ -3,7 +3,7 @@ from db.init_db import init_db
 from db.student import add_registration, finding_card
 
 print("Регистрация существующего студента на приемы пищи:")
-card_id = int(input("Введите ID карты студента: "))
+card_id = input("Введите ID карты студента: ")
 
 student_id = finding_card(card_id)
 if student_id is None:
