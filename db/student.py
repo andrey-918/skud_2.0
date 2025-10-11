@@ -33,10 +33,10 @@ def log_attendance(student_id, meal_id, status):
     conn.commit()
     conn.close()
 
-def add_student(name, card_id):
+def add_student(name, card_id, group_name=None):
     conn = sqlite3.connect('skud.db')
     cursor = conn.cursor()
-    cursor.execute('INSERT INTO students (name, card_id) VALUES (?, ?)', (name, card_id))
+    cursor.execute('INSERT INTO students (name, card_id, group_name) VALUES (?, ?, ?)', (name, card_id, group_name))
     conn.commit()
     conn.close()
 
@@ -50,20 +50,38 @@ def add_registration(student_id, meal_id):
 def get_all_students():
     conn = sqlite3.connect('skud.db')
     cursor = conn.cursor()
-    cursor.execute('SELECT id, name, card_id FROM students')
+    cursor.execute('SELECT id, name, card_id, group_name FROM students')
     rows = cursor.fetchall()
     conn.close()
     return rows
 
-def update_student(student_id, name=None, card_id=None):
+def update_student(student_id, name=None, card_id=None, group_name=None):
     conn = sqlite3.connect('skud.db')
     cursor = conn.cursor()
     if name:
         cursor.execute('UPDATE students SET name = ? WHERE id = ?', (name, student_id))
     if card_id:
         cursor.execute('UPDATE students SET card_id = ? WHERE id = ?', (card_id, student_id))
+    if group_name:
+        cursor.execute('UPDATE students SET group_name = ? WHERE id = ?', (group_name, student_id))
     conn.commit()
     conn.close()
+
+def find_student_by_name_group(name, group_name):
+    conn = sqlite3.connect('skud.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT id FROM students WHERE name = ? AND group_name = ?', (name, group_name))
+    result = cursor.fetchone()
+    conn.close()
+    return result[0] if result else None
+
+def find_student_by_name(name):
+    conn = sqlite3.connect('skud.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT id FROM students WHERE name = ?', (name,))
+    result = cursor.fetchone()
+    conn.close()
+    return result[0] if result else None
 
 def delete_student(student_id):
     conn = sqlite3.connect('skud.db')

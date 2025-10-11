@@ -14,6 +14,12 @@ def init_db():
         )
     ''')
 
+    # Add group_name column if not exists
+    try:
+        cursor.execute('ALTER TABLE students ADD COLUMN group_name TEXT')
+    except sqlite3.OperationalError:
+        pass  # Column already exists
+
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS meals (
             id INTEGER PRIMARY KEY,
@@ -51,7 +57,7 @@ def init_db():
     ''')
     students = []
     
-    cursor.executemany('INSERT OR IGNORE INTO students VALUES (?, ?, ?)', students)
+    cursor.executemany('INSERT OR IGNORE INTO students VALUES (?, ?, ?, ?)', students)
 
     cursor.execute('DELETE FROM registrations')  # Clear old registrations
     cursor.execute('DELETE FROM attendance')  # Clear old attendance

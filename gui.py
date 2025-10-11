@@ -6,7 +6,8 @@ import openpyxl
 from db.init_db import init_db
 from db.student import (
     finding_card, check_student, log_attendance, add_student,
-    add_registration, get_all_students, update_student, delete_student
+    add_registration, get_all_students, update_student, delete_student,
+    find_student_by_name_group
 )
 from db.meals import get_current_meal, get_meal_name
 from db.reports import get_attendance_report, get_all_attendance_records
@@ -42,7 +43,7 @@ class AttendanceSystemGUI:
         ttk.Label(left_frame, text="Список студентов:", font=('Arial', 12, 'bold')).pack(pady=5)
 
         # Treeview for students
-        columns = ('ID', 'Имя', 'Карта')
+        columns = ('ID', 'Имя', 'Карта', 'Группа')
         self.student_tree = ttk.Treeview(left_frame, columns=columns, show='headings', height=15)
         for col in columns:
             self.student_tree.heading(col, text=col)
@@ -60,7 +61,8 @@ class AttendanceSystemGUI:
 
         ttk.Button(btn_frame, text="Обновить список", command=self.load_students).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Добавить студента", command=self.add_student_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Импорт из XLSX", command=self.import_students_from_xlsx).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Импорт из Excel", command=self.import_students_info_from_xlsx).pack(side=tk.LEFT, padx=5)
+        
 
         # Right panel - Actions
         right_frame = ttk.Frame(frame)
@@ -123,6 +125,7 @@ class AttendanceSystemGUI:
 
         ttk.Button(btn_frame, text="Загрузить приемы пищи", command=self.load_meals_for_registration).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Зарегистрировать", command=self.register_student).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Импорт из XLSX", command=self.import_students_from_xlsx).pack(side=tk.LEFT, padx=5)
 
     def create_reports_tab(self):
         """Tab for viewing attendance reports"""
@@ -213,12 +216,16 @@ class AttendanceSystemGUI:
 
         students = get_all_students()
         for student in students:
-            self.student_tree.insert('', tk.END, values=student)
+            self.student_tree.insert('', tk.END, values=(student[0], student[1], student[2], student[3] if len(student) > 3 else ''))
 
     def add_student_dialog(self):
         """Dialog to add a new student"""
         name = simpledialog.askstring("Добавить студента", "Имя студента:")
         if not name:
+            return
+
+        group = simpledialog.askstring("Добавить студента", "Группа:")
+        if not group:
             return
 
         card_id_str = simpledialog.askstring("Добавить студента", "ID карты:")
@@ -227,8 +234,8 @@ class AttendanceSystemGUI:
 
         try:
             card_id = int(card_id_str)
-            add_student(name, card_id)
-            messagebox.showinfo("Успех", f"Студент {name} добавлен с картой {card_id}")
+            add_student(name, card_id, group)
+            messagebox.showinfo("Успех", f"Студент {name} из группы {group} добавлен с картой {card_id}")
             self.load_students()
         except ValueError:
             messagebox.showerror("Ошибка", "ID карты должен быть числом")
@@ -243,14 +250,15 @@ class AttendanceSystemGUI:
             return
 
         item = self.student_tree.item(selected[0])
-        student_id, current_name, current_card = item['values']
+        student_id, current_name, current_card, current_group = item['values']
 
         name = simpledialog.askstring("Изменить студента", "Новое имя:", initialvalue=current_name)
+        group = simpledialog.askstring("Изменить студента", "Новая группа:", initialvalue=current_group)
         card_id_str = simpledialog.askstring("Изменить студента", "Новый ID карты:", initialvalue=str(current_card))
 
         try:
             card_id = int(card_id_str) if card_id_str else None
-            update_student(student_id, name, card_id)
+            update_student(student_id, name, card_id, group)
             messagebox.showinfo("Успех", "Информация о студенте обновлена")
             self.load_students()
         except ValueError:
@@ -288,38 +296,68 @@ class AttendanceSystemGUI:
             wb = openpyxl.load_workbook(filename)
             ws = wb.active
 
-            # Get next card_id
-            conn = sqlite3.connect('skud.db')
-            cursor = conn.cursor()
-            cursor.execute('SELECT MAX(card_id) FROM students')
-            max_card = cursor.fetchone()[0]
-            next_card = (max_card + 1) if max_card else 1
-            conn.close()
+            day_choice = self.day_var.get()
+            if day_choice == "-1":
+                d_list = list(range(7))  # Monday to Sunday
+            else:
+                d_list = [int(day_choice)]
 
-            added = 0
             registered = 0
+            skipped = 0
             for row in range(9, ws.max_row + 1):
-                name = ws.cell(row=row, column=3).value
+                group = ws.cell(row=row, column=1).value
+                name = ws.cell(row=row, column=3).value  # ФИО in column 3
                 if name and isinstance(name, str) and name.strip():
-                    try:
-                        add_student(name.strip(), next_card)
-                        student_id = finding_card(next_card)
-                        next_card += 1
-                        added += 1
-
+                    group_str = group.strip() if group and isinstance(group, str) else ""
+                    student_id = find_student_by_name_group(name.strip(), group_str)
+                    if student_id:
                         # Import registrations
-                        for d in range(6):  # Monday to Saturday
+                        for d in d_list:
                             for m in range(3):  # Breakfast, Lunch, Dinner
-                                col = 4 + d * 3 + m
-                                if ws.cell(row=row, column=col).value == 1:
+                                if day_choice == "-1":
+                                    col = 4 + d * 3 + m
+                                else:
+                                    col = 4 + m
+                                cell_value = ws.cell(row=row, column=col).value
+                                if cell_value == 1 or str(cell_value).strip() in ['x', 'X', 'да', 'yes']:
                                     meal_id = d * 3 + m + 1
                                     add_registration(student_id, meal_id)
                                     registered += 1
+                    else:
+                        skipped += 1
+
+            message = f"Зарегистрировано {registered} приемов пищи для существующих студентов"
+            if skipped > 0:
+                message += f"\nПропущено {skipped} студентов (не найдены в БД)"
+            messagebox.showinfo("Успех", message)
+            self.load_students()
+        except Exception as e:
+            messagebox.showerror("Ошибка", f"Не удалось импортировать: {str(e)}")
+
+    def import_students_info_from_xlsx(self):
+        """Import students from excel file"""
+        filename = filedialog.askopenfilename(title="Выберите XLSX файл", filetypes=[("Excel files", "*.xlsx")])
+        if not filename:
+            return
+        try:
+            wb = openpyxl.load_workbook('uids.xlsx')
+            ws = wb.active
+
+            added = 0
+            for row in range(2, ws.max_row + 1):  # Skip header row
+                uid = ws.cell(row=row, column=1).value
+                name = ws.cell(row=row, column=2).value
+                group = ws.cell(row=row, column=3).value
+
+                if uid and name and group:
+                    try:
+                        add_student(name, int(uid), group)
+                        added += 1
                     except sqlite3.IntegrityError:
-                        # Skip if card_id conflict
+                        # Skip if card_id already exists
                         pass
 
-            messagebox.showinfo("Успех", f"Добавлено {added} студентов и {registered} регистраций")
+            messagebox.showinfo("Успех", f"Добавлено {added} студентов")
             self.load_students()
         except Exception as e:
             messagebox.showerror("Ошибка", f"Не удалось импортировать: {str(e)}")
