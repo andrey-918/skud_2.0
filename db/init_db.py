@@ -61,7 +61,7 @@ def init_db():
         meals.extend([
             (None, 'Breakfast', '07:00', '09:00', day),
             (None, 'Lunch', '11:00', '14:00', day),
-            (None, 'Dinner', '18:00', '20:00', day)
+            (None, 'Dinner', '18:00', '22:00', day)
         ])
     cursor.executemany('INSERT INTO meals VALUES (?, ?, ?, ?, ?)', meals)
 

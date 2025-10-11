@@ -1,7 +1,8 @@
 import tkinter as tk
-from tkinter import ttk, messagebox, simpledialog
+from tkinter import ttk, messagebox, simpledialog, filedialog
 import sqlite3
 from datetime import datetime
+import openpyxl
 from db.init_db import init_db
 from db.student import (
     finding_card, check_student, log_attendance, add_student,
@@ -59,6 +60,7 @@ class AttendanceSystemGUI:
 
         ttk.Button(btn_frame, text="Обновить список", command=self.load_students).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Добавить студента", command=self.add_student_dialog).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Импорт из XLSX", command=self.import_students_from_xlsx).pack(side=tk.LEFT, padx=5)
 
         # Right panel - Actions
         right_frame = ttk.Frame(frame)
@@ -275,6 +277,52 @@ class AttendanceSystemGUI:
             self.load_students()
         except Exception as e:
             messagebox.showerror("Ошибка", f"Не удалось удалить студента: {str(e)}")
+
+    def import_students_from_xlsx(self):
+        """Import students from XLSX file"""
+        filename = filedialog.askopenfilename(title="Выберите XLSX файл", filetypes=[("Excel files", "*.xlsx")])
+        if not filename:
+            return
+
+        try:
+            wb = openpyxl.load_workbook(filename)
+            ws = wb.active
+
+            # Get next card_id
+            conn = sqlite3.connect('skud.db')
+            cursor = conn.cursor()
+            cursor.execute('SELECT MAX(card_id) FROM students')
+            max_card = cursor.fetchone()[0]
+            next_card = (max_card + 1) if max_card else 1
+            conn.close()
+
+            added = 0
+            registered = 0
+            for row in range(9, ws.max_row + 1):
+                name = ws.cell(row=row, column=3).value
+                if name and isinstance(name, str) and name.strip():
+                    try:
+                        add_student(name.strip(), next_card)
+                        student_id = finding_card(next_card)
+                        next_card += 1
+                        added += 1
+
+                        # Import registrations
+                        for d in range(6):  # Monday to Saturday
+                            for m in range(3):  # Breakfast, Lunch, Dinner
+                                col = 4 + d * 3 + m
+                                if ws.cell(row=row, column=col).value == 1:
+                                    meal_id = d * 3 + m + 1
+                                    add_registration(student_id, meal_id)
+                                    registered += 1
+                    except sqlite3.IntegrityError:
+                        # Skip if card_id conflict
+                        pass
+
+            messagebox.showinfo("Успех", f"Добавлено {added} студентов и {registered} регистраций")
+            self.load_students()
+        except Exception as e:
+            messagebox.showerror("Ошибка", f"Не удалось импортировать: {str(e)}")
 
     # Registration methods
     def find_student_for_registration(self):
@@ -517,5 +565,3 @@ def main():
     root.mainloop()
 
 
-if __name__ == "__main__":
-    main()
