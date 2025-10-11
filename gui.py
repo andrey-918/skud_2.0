@@ -336,24 +336,26 @@ class AttendanceSystemGUI:
         if not filename:
             return
         try:
-            wb = openpyxl.load_workbook('uids.xlsx')
+            wb = openpyxl.load_workbook(filename)
             ws = wb.active
 
             added = 0
+            updated = 0
             for row in range(2, ws.max_row + 1):  # Skip header row
                 uid = ws.cell(row=row, column=1).value
                 name = ws.cell(row=row, column=2).value
                 group = ws.cell(row=row, column=3).value
 
                 if uid and name and group:
-                    try:
+                    student_id = find_student_by_name_group(name.strip(), group.strip())
+                    if student_id:
+                        update_student(student_id, card_id=str(uid))
+                        updated += 1
+                    else:
                         add_student(name, str(uid), group)
                         added += 1
-                    except sqlite3.IntegrityError:
-                        # Skip if card_id already exists
-                        pass
 
-            messagebox.showinfo("Успех", f"Добавлено {added} студентов")
+            messagebox.showinfo("Успех", f"Добавлено {added} студентов, обновлено {updated} студентов")
             self.load_students()
         except Exception as e:
             messagebox.showerror("Ошибка", f"Не удалось импортировать: {str(e)}")

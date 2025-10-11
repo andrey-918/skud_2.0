@@ -6,15 +6,6 @@ def init_db():
     conn.execute('PRAGMA foreign_keys = ON;')
     cursor = conn.cursor()
 
-    cursor.execute('DROP TABLE IF EXISTS students')
-    cursor.execute('''
-        CREATE TABLE students (
-            id INTEGER PRIMARY KEY,
-            name TEXT NOT NULL,
-            card_id TEXT UNIQUE NOT NULL
-        )
-    ''')
-
     # Add group_name column if not exists
     try:
         cursor.execute('ALTER TABLE students ADD COLUMN group_name TEXT')
