@@ -13,6 +13,15 @@ def init_db():
         pass  # Column already exists
 
     cursor.execute('''
+        CREATE TABLE IF NOT EXISTS students (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            card_id TEXT UNIQUE NOT NULL,
+            group_name TEXT
+        )
+    ''')
+
+    cursor.execute('''
         CREATE TABLE IF NOT EXISTS meals (
             id INTEGER PRIMARY KEY,
             name TEXT NOT NULL,
