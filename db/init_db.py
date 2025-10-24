@@ -56,24 +56,17 @@ def init_db():
             FOREIGN KEY (meal_id) REFERENCES meals (id)
         )
     ''')
-    students = []
-    
-    cursor.executemany('INSERT OR IGNORE INTO students VALUES (?, ?, ?, ?)', students)
-
-    cursor.execute('DELETE FROM registrations')  # Clear old registrations
-    cursor.execute('DELETE FROM attendance')  # Clear old attendance
-    cursor.execute('DELETE FROM meals')  # Clear old meals
-    meals = []
-    for day in range(7):  # 0=Monday to 6=Sunday
-        meals.extend([
-            (None, 'Breakfast', '07:00', '09:00', day),
-            (None, 'Lunch', '11:00', '14:00', day),
-            (None, 'Dinner', '18:00', '22:00', day)
-        ])
-    cursor.executemany('INSERT INTO meals VALUES (?, ?, ?, ?, ?)', meals)
-
-    registrations = []
-    cursor.executemany('INSERT OR IGNORE INTO registrations VALUES (?, ?, ?)', registrations)
+    # Check if meals already exist
+    cursor.execute('SELECT COUNT(*) FROM meals')
+    if cursor.fetchone()[0] == 0:
+        meals = []
+        for day in range(7):  # 0=Monday to 6=Sunday
+            meals.extend([
+                (None, 'Breakfast', '07:00', '09:00', day),
+                (None, 'Lunch', '11:00', '17:00', day),
+                (None, 'Dinner', '18:00', '22:00', day)
+            ])
+        cursor.executemany('INSERT INTO meals VALUES (?, ?, ?, ?, ?)', meals)
 
     conn.commit()
     conn.close()
