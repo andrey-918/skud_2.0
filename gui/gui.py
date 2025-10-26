@@ -1,10 +1,10 @@
 import tkinter as tk
 from tkinter import ttk
 from db.init_db import init_db
-from student_tab import StudentTab
-from registration_tab import RegistrationTab
-from reports_tab import ReportsTab
-from attendance_tab import AttendanceTab
+from gui.student_tab import StudentTab
+from gui.registration_tab import RegistrationTab
+from gui.reports_tab import ReportsTab
+from gui.attendance_tab import AttendanceTab
 
 class AttendanceSystemGUI:
     def __init__(self, root):

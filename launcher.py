@@ -34,7 +34,7 @@ def initialize_database():
 def run_gui():
     """Run the GUI application."""
     try:
-        from gui import main
+        from gui.gui import main
         main()
     except Exception as e:
         print(f"Failed to run GUI: {e}")
