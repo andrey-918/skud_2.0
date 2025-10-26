@@ -10,7 +10,7 @@ from db.student import (
     find_student_by_name_group
 )
 from db.meals import get_current_meal, get_meal_name
-from db.reports import get_attendance_report, get_all_attendance_records
+from db.reports import get_all_attendance_records
 
 class AttendanceSystemGUI:
     def __init__(self, root):
@@ -128,58 +128,9 @@ class AttendanceSystemGUI:
         ttk.Button(btn_frame, text="Импорт из XLSX", command=self.import_students_from_xlsx).pack(side=tk.LEFT, padx=5)
 
     def create_reports_tab(self):
-        """Tab for viewing attendance reports"""
+        """Tab for exporting attendance reports to Excel"""
         frame = ttk.Frame(self.notebook)
         self.notebook.add(frame, text="Отчеты")
-
-        # Report type selection
-        type_frame = ttk.LabelFrame(frame, text="Тип отчета")
-        type_frame.pack(fill=tk.X, padx=10, pady=10)
-
-        self.report_type = tk.StringVar(value="specific")
-        ttk.Radiobutton(type_frame, text="Отчет по конкретному приему пищи", variable=self.report_type,
-                       value="specific", command=self.toggle_report_type).pack(anchor=tk.W, padx=5, pady=5)
-        ttk.Radiobutton(type_frame, text="Общая таблица посещаемости", variable=self.report_type,
-                       value="all", command=self.toggle_report_type).pack(anchor=tk.W, padx=5, pady=5)
-
-        # Specific meal report controls
-        self.specific_frame = ttk.LabelFrame(frame, text="Параметры отчета")
-        self.specific_frame.pack(fill=tk.X, padx=10, pady=10)
-
-        ttk.Label(self.specific_frame, text="День недели:").grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
-        self.report_day = ttk.Combobox(self.specific_frame, values=[
-            "0 - Понедельник", "1 - Вторник", "2 - Среда", "3 - Четверг",
-            "4 - Пятница", "5 - Суббота", "6 - Воскресенье"])
-        self.report_day.grid(row=0, column=1, padx=5, pady=5, sticky=tk.EW)
-        self.report_day.current(0)
-
-        ttk.Button(self.specific_frame, text="Показать приемы пищи", command=self.load_meals_for_report).grid(row=0, column=2, padx=5, pady=5)
-
-        ttk.Label(self.specific_frame, text="Прием пищи:").grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
-        self.report_meal = ttk.Combobox(self.specific_frame)
-        self.report_meal.grid(row=1, column=1, padx=5, pady=5, sticky=tk.EW)
-
-        ttk.Button(self.specific_frame, text="Сгенерировать отчет", command=self.generate_specific_report).grid(row=1, column=2, padx=5, pady=5)
-        ttk.Button(self.specific_frame, text="Экспорт в Excel", command=self.export_specific_report_to_excel).grid(row=1, column=3, padx=5, pady=5)
-
-        # Report display area
-        display_frame = ttk.LabelFrame(frame, text="Результат")
-        display_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-
-        self.report_text = tk.Text(display_frame, wrap=tk.WORD, height=20)
-        self.report_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-
-        scrollbar = ttk.Scrollbar(display_frame, orient=tk.VERTICAL, command=self.report_text.yview)
-        self.report_text.configure(yscrollcommand=scrollbar.set)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-        # Export buttons
-        self.export_specific_btn = ttk.Button(display_frame, text="Экспорт в Excel", command=self.export_specific_report_to_excel)
-        self.export_all_btn = ttk.Button(display_frame, text="Экспорт в Excel", command=self.export_all_report_to_excel)
-        self.export_specific_btn.pack(side=tk.BOTTOM, pady=5)
-        self.export_all_btn.pack(side=tk.BOTTOM, pady=5)
-        self.export_specific_btn.pack_forget()
-        self.export_all_btn.pack_forget()
 
         # Threshold for percentage coloring
         threshold_frame = ttk.LabelFrame(frame, text="Настройки")
@@ -187,13 +138,11 @@ class AttendanceSystemGUI:
 
         ttk.Label(threshold_frame, text="Порог процента для окраски (%):").grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
         self.percentage_threshold = ttk.Entry(threshold_frame)
-        self.percentage_threshold.insert(0, "50") 
+        self.percentage_threshold.insert(0, "50")
         self.percentage_threshold.grid(row=0, column=1, padx=5, pady=5, sticky=tk.EW)
 
-        # General report button (initially hidden)
-        self.all_report_btn = ttk.Button(frame, text="Показать общую таблицу", command=self.generate_all_report)
-        # Initially hide the all report button
-        self.all_report_btn.pack_forget()
+        # Export button for full report
+        ttk.Button(frame, text="Экспорт общей таблицы в Excel", command=self.export_all_report_to_excel).pack(pady=20)
 
     def create_attendance_tab(self):
         """Tab for checking attendance (main functionality)"""
@@ -456,184 +405,6 @@ class AttendanceSystemGUI:
             messagebox.showerror("Ошибка", f"Не удалось зарегистрировать: {str(e)}")
 
     # Reports methods
-    def toggle_report_type(self):
-        """Toggle between specific meal report and all reports"""
-        if self.report_type.get() == "specific":
-            self.all_report_btn.pack_forget()
-            self.export_all_btn.pack_forget()
-            self.export_specific_btn.pack(side=tk.BOTTOM, pady=5)
-            self.specific_frame.pack(fill=tk.X, padx=10, pady=10, after=self.report_text)
-        else:
-            self.specific_frame.pack_forget()
-            self.export_specific_btn.pack_forget()
-            self.all_report_btn.pack(fill=tk.X, padx=10, pady=10, after=self.report_text)
-            self.export_all_btn.pack(side=tk.BOTTOM, pady=5)
-
-    def load_meals_for_report(self):
-        """Load meals for selected day in reports"""
-        day_str = self.report_day.get()
-        if not day_str:
-            return
-
-        day_of_week = int(day_str.split()[0])
-
-        conn = sqlite3.connect('skud.db')
-        cursor = conn.cursor()
-        cursor.execute('SELECT id, name FROM meals WHERE day_of_week = ?', (day_of_week,))
-        meals = cursor.fetchall()
-        conn.close()
-
-        self.report_meal['values'] = [f"{meal[0]}: {meal[1]}" for meal in meals]
-        if meals:
-            self.report_meal.current(0)
-
-    def generate_specific_report(self):
-        """Generate report for specific meal"""
-        meal_str = self.report_meal.get()
-        day_str = self.report_day.get()
-
-        if not meal_str or not day_str:
-            messagebox.showwarning("Предупреждение", "Выберите день и прием пищи")
-            return
-
-        try:
-            meal_id = int(meal_str.split(':')[0])
-            day_of_week = int(day_str.split()[0])
-
-            report = get_attendance_report(meal_id, day_of_week)
-            meal_name = get_meal_name(meal_id)
-
-            day_names = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье']
-
-            self.report_text.delete(1.0, tk.END)
-            self.report_text.insert(tk.END, f"Отчет для {meal_name} в {day_names[day_of_week]}\n\n")
-
-            self.report_text.insert(tk.END, "Пришли:\n")
-            for name in report['came']:
-                self.report_text.insert(tk.END, f" - {name}\n")
-
-            if report['came_without_registration']:
-                self.report_text.insert(tk.END, "\nПришли без записи:\n")
-                for name in report['came_without_registration']:
-                    self.report_text.insert(tk.END, f" - {name}\n")
-
-            self.report_text.insert(tk.END, "\nНе пришли:\n")
-            for name in report['didnt_come']:
-                self.report_text.insert(tk.END, f" - {name}\n")
-
-            # Show export button
-            self.export_specific_btn.pack(side=tk.BOTTOM, pady=5)
-
-        except Exception as e:
-            messagebox.showerror("Ошибка", f"Не удалось сгенерировать отчет: {str(e)}")
-
-    def export_specific_report_to_excel(self):
-        """Export specific meal report to Excel"""
-        meal_str = self.report_meal.get()
-        day_str = self.report_day.get()
-
-        if not meal_str or not day_str:
-            messagebox.showwarning("Предупреждение", "Выберите день и прием пищи")
-            return
-
-        try:
-            meal_id = int(meal_str.split(':')[0])
-            day_of_week = int(day_str.split()[0])
-
-            report = get_attendance_report(meal_id, day_of_week)
-            meal_name = get_meal_name(meal_id)
-
-            day_names = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье']
-
-            wb = openpyxl.Workbook()
-            ws = wb.active
-            ws.title = "Отчет"
-
-            ws['A1'] = f"Отчет для {meal_name} в {day_names[day_of_week]}"
-
-            ws['A3'] = "Пришли:"
-            for i, name in enumerate(report['came'], start=4):
-                ws[f'A{i}'] = name
-
-            start_without = len(report['came']) + 6
-            if report['came_without_registration']:
-                ws[f'A{start_without}'] = "Пришли без записи:"
-                for i, name in enumerate(report['came_without_registration'], start=start_without + 1):
-                    ws[f'A{i}'] = name
-                start_didnt = start_without + len(report['came_without_registration']) + 2
-            else:
-                start_didnt = start_without
-
-            ws[f'A{start_didnt}'] = "Не пришли:"
-            for i, name in enumerate(report['didnt_come'], start=start_didnt + 1):
-                ws[f'A{i}'] = name
-
-            filename = f"отчеты/Отчет_{meal_name}_{day_names[day_of_week]}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.xlsx"
-            wb.save(filename)
-
-            messagebox.showinfo("Успех", f"Отчет экспортирован в {filename}")
-
-        except Exception as e:
-            messagebox.showerror("Ошибка", f"Не удалось экспортировать отчет: {str(e)}")
-
-    def generate_all_report(self):
-        """Generate comprehensive attendance report"""
-        try:
-            records = get_all_attendance_records()
-            if not records:
-                self.report_text.delete(1.0, tk.END)
-                self.report_text.insert(tk.END, "Нет данных о посещаемости.")
-                return
-
-            # Group by day_of_week
-            from collections import defaultdict
-            days_data = defaultdict(lambda: defaultdict(dict))
-
-            for record in records:
-                day = record['day_of_week']
-                student = record['student_name']
-                meal = record['meal_name']
-                status = record['status']
-                days_data[day][student][meal] = status
-
-            day_names = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье']
-
-            self.report_text.delete(1.0, tk.END)
-
-            for day in sorted(days_data.keys()):
-                self.report_text.insert(tk.END, f"\nДень: {day_names[day]}\n")
-                students = sorted(days_data[day].keys())
-                meals = sorted(set(m for s in days_data[day].values() for m in s.keys()))
-
-                # Fix meal order: Breakfast, Lunch, Dinner
-                meal_order = ['Breakfast', 'Lunch', 'Dinner']
-                meals = [meal for meal in meal_order if meal in meals]
-
-                # Header
-                header = f"{'Студент':<20}" + "".join(f"{meal:<15}" for meal in meals)
-                self.report_text.insert(tk.END, header + "\n")
-                self.report_text.insert(tk.END, "-" * len(header) + "\n")
-
-                # Rows
-                for student in students:
-                    row = f"{student:<20}"
-                    for meal in meals:
-                        status = days_data[day][student].get(meal, 'not_registered')
-                        status_ru = {
-                            'came': 'пришел',
-                            'didnt_come': 'не пришел',
-                            'not_registered': 'не записан',
-                            'came_without_registration': 'пришел без записи'
-                        }.get(status, status)
-                        row += f"{status_ru:<15}"
-                    self.report_text.insert(tk.END, row + "\n")
-
-            # Show export button
-            self.export_all_btn.pack(side=tk.BOTTOM, pady=5)
-
-        except Exception as e:
-            messagebox.showerror("Ошибка", f"Не удалось сгенерировать отчет: {str(e)}")
-
     def export_all_report_to_excel(self):
         """Export comprehensive attendance report to Excel in wide format"""
         try:
