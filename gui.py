@@ -181,6 +181,15 @@ class AttendanceSystemGUI:
         self.export_specific_btn.pack_forget()
         self.export_all_btn.pack_forget()
 
+        # Threshold for percentage coloring
+        threshold_frame = ttk.LabelFrame(frame, text="Настройки")
+        threshold_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Label(threshold_frame, text="Порог процента для окраски (%):").grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
+        self.percentage_threshold = ttk.Entry(threshold_frame)
+        self.percentage_threshold.insert(0, "50") 
+        self.percentage_threshold.grid(row=0, column=1, padx=5, pady=5, sticky=tk.EW)
+
         # General report button (initially hidden)
         self.all_report_btn = ttk.Button(frame, text="Показать общую таблицу", command=self.generate_all_report)
         # Initially hide the all report button
@@ -662,6 +671,7 @@ class AttendanceSystemGUI:
 
             from openpyxl.styles import PatternFill
             yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+            red_fill = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
 
             wb = openpyxl.Workbook()
             ws = wb.active
@@ -740,14 +750,27 @@ class AttendanceSystemGUI:
                 total_registered += came_with_registration
 
                 # Additional columns
-                ws.cell(row=row, column=22).value = total_registered
-                ws.cell(row=row, column=23).value = came_with_registration
-                ws.cell(row=row, column=24).value = came_without_registration
+                cell_22 = ws.cell(row=row, column=22)
+                cell_22.value = total_registered
+
+                cell_23 = ws.cell(row=row, column=23)
+                cell_23.value = came_with_registration
+
+                cell_24 = ws.cell(row=row, column=24)
+                cell_24.value = came_without_registration
+
+                cell_25 = ws.cell(row=row, column=25)
                 if total_registered > 0:
                     percentage = (came_with_registration / total_registered) * 100
-                    ws.cell(row=row, column=25).value = round(percentage, 2)
+                    cell_25.value = round(percentage, 2)
+                    try:
+                        threshold = float(self.percentage_threshold.get())
+                        if percentage < threshold:
+                            cell_25.fill = red_fill
+                    except ValueError:
+                        pass  # Ignore invalid threshold
                 else:
-                    ws.cell(row=row, column=25).value = 0
+                    cell_25.value = 0
 
                 row += 1
 
