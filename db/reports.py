@@ -17,12 +17,15 @@ def get_attendance_report(meal_id, day_of_week):
 
     report = {
         'came': [],
-        'didnt_come': []
+        'didnt_come': [],
+        'came_without_registration': []
     }
 
     for student_id, name, status in rows:
         if status == 'came':
             report['came'].append(name)
+        elif status == 'came_without_registration':
+            report['came_without_registration'].append(name)
         else:
             report['didnt_come'].append(name)
 
@@ -47,6 +50,16 @@ def get_all_attendance_records():
 
     records = []
     for student_name, meal_id, day_of_week, meal_name, status in rows:
+        # Override status if came_without_registration exists
+        if status == 'not_registered':
+            # Check if there's an attendance record with came_without_registration
+            conn = sqlite3.connect('skud.db')
+            cursor = conn.cursor()
+            cursor.execute('SELECT status FROM attendance WHERE student_id = (SELECT id FROM students WHERE name = ?) AND meal_id = ?', (student_name, meal_id))
+            attendance_status = cursor.fetchone()
+            conn.close()
+            if attendance_status and attendance_status[0] == 'came_without_registration':
+                status = 'came_without_registration'
         records.append({
             'student_name': student_name,
             'meal_id': meal_id,

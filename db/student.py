@@ -20,9 +20,12 @@ def student_sheet(student_id, meal_id):
 def check_student(card_id, meal_id):
     student_id = finding_card(card_id)
     if student_id is None:
-        return False
+        return 'unknown_card'
     registration = student_sheet(student_id, meal_id)
-    return registration is not None
+    if registration is not None:
+        return 'registered'
+    else:
+        return 'not_registered'
 
 def log_attendance(student_id, meal_id, status):
     conn = sqlite3.connect('skud.db')

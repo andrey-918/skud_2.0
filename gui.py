@@ -503,6 +503,11 @@ class AttendanceSystemGUI:
             for name in report['came']:
                 self.report_text.insert(tk.END, f" - {name}\n")
 
+            if report['came_without_registration']:
+                self.report_text.insert(tk.END, "\nПришли без записи:\n")
+                for name in report['came_without_registration']:
+                    self.report_text.insert(tk.END, f" - {name}\n")
+
             self.report_text.insert(tk.END, "\nНе пришли:\n")
             for name in report['didnt_come']:
                 self.report_text.insert(tk.END, f" - {name}\n")
@@ -541,7 +546,15 @@ class AttendanceSystemGUI:
             for i, name in enumerate(report['came'], start=4):
                 ws[f'A{i}'] = name
 
-            start_didnt = len(report['came']) + 6
+            start_without = len(report['came']) + 6
+            if report['came_without_registration']:
+                ws[f'A{start_without}'] = "Пришли без записи:"
+                for i, name in enumerate(report['came_without_registration'], start=start_without + 1):
+                    ws[f'A{i}'] = name
+                start_didnt = start_without + len(report['came_without_registration']) + 2
+            else:
+                start_didnt = start_without
+
             ws[f'A{start_didnt}'] = "Не пришли:"
             for i, name in enumerate(report['didnt_come'], start=start_didnt + 1):
                 ws[f'A{i}'] = name
@@ -600,7 +613,8 @@ class AttendanceSystemGUI:
                         status_ru = {
                             'came': 'пришел',
                             'didnt_come': 'не пришел',
-                            'not_registered': 'не записан'
+                            'not_registered': 'не записан',
+                            'came_without_registration': 'пришел без записи'
                         }.get(status, status)
                         row += f"{status_ru:<15}"
                     self.report_text.insert(tk.END, row + "\n")
@@ -684,6 +698,12 @@ class AttendanceSystemGUI:
                 ws.cell(row=8, column=col+2).value = "У"
                 col += 3
 
+            # Additional columns
+            ws.cell(row=8, column=22).value = "Всего заявок"
+            ws.cell(row=8, column=23).value = "Питание по заявке"
+            ws.cell(row=8, column=24).value = "Питание без заявки"
+            ws.cell(row=8, column=25).value = "Процент посещений"
+
             # Data rows
             row = 9
             for idx, student_name in enumerate(sorted(student_data.keys()), start=1):
@@ -692,6 +712,10 @@ class AttendanceSystemGUI:
                 ws.cell(row=row, column=2).value = idx
                 ws.cell(row=row, column=3).value = student_name
 
+                total_registered = 0
+                came_with_registration = 0
+                came_without_registration = 0
+
                 col = 4
                 for day in range(7):
                     for meal_type in range(3):  # 0: Breakfast, 1: Lunch, 2: Dinner
@@ -699,12 +723,32 @@ class AttendanceSystemGUI:
                         cell = ws.cell(row=row, column=col)
                         if status == 'came':
                             cell.value = 1
+                            came_with_registration += 1
+                            total_registered += 1
                         elif status == 'didnt_come':
                             cell.value = 1
                             cell.fill = yellow_fill
-                        else:
-                            cell.value = 0  # Not registered
+                            total_registered += 1
+                        elif status == 'came_without_registration':
+                            cell.value = 1
+                            came_without_registration += 1
+                        elif status == 'not_registered':
+                            cell.value = 0
                         col += 1
+
+                # Calculate total registered (didnt_come + came_with_registration)
+                total_registered += came_with_registration
+
+                # Additional columns
+                ws.cell(row=row, column=22).value = total_registered
+                ws.cell(row=row, column=23).value = came_with_registration
+                ws.cell(row=row, column=24).value = came_without_registration
+                if total_registered > 0:
+                    percentage = (came_with_registration / total_registered) * 100
+                    ws.cell(row=row, column=25).value = round(percentage, 2)
+                else:
+                    ws.cell(row=row, column=25).value = 0
+
                 row += 1
 
             filename = f"отчеты/Общая_таблица_посещаемости_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.xlsx"
@@ -742,11 +786,16 @@ class AttendanceSystemGUI:
 
         try:
             card_id = card_id_str
-            if check_student(card_id, self.current_meal_id):
+            status = check_student(card_id, self.current_meal_id)
+            if status == 'registered':
                 student_id = finding_card(card_id)
                 log_attendance(student_id, self.current_meal_id, 'came')
                 self.attendance_result.config(text="ДОСТУП РАЗРЕШЕН", foreground="green")
-            else:
+            elif status == 'not_registered':
+                student_id = finding_card(card_id)
+                log_attendance(student_id, self.current_meal_id, 'came_without_registration')
+                self.attendance_result.config(text="ДОСТУП РАЗРЕШЕН (БЕЗ ЗАПИСИ)", foreground="orange")
+            else:  # unknown_card
                 self.attendance_result.config(text="ДОСТУП ЗАПРЕЩЕН", foreground="red")
         except Exception as e:
             self.attendance_result.config(text=f"Ошибка: {str(e)}", foreground="red")
