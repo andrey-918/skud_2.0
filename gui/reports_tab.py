@@ -77,7 +77,6 @@ class ReportsTab(ttk.Frame):
             ws['M6'] = "Четверг"
             ws['P6'] = "Пятница"
             ws['S6'] = "Суббота"
-            ws['V6'] = "Воскресенье"
             ws['A7'] = "Локация"
             ws['D7'] = "Гоголя"
             ws['G7'] = "Гоголя"
@@ -85,7 +84,6 @@ class ReportsTab(ttk.Frame):
             ws['M7'] = "Гоголя"
             ws['P7'] = "Гоголя"
             ws['S7'] = "Гоголя"
-            ws['V7'] = "Гоголя"
             ws['A8'] = "Учебная группа"
             ws['B8'] = "№п/п"
             ws['C8'] = "ФИО"
@@ -185,7 +183,7 @@ class ReportsTab(ttk.Frame):
             # Add meal summary row
             ws.cell(row=row, column=3).value = "Сводка"
             col = 4
-            for day in range(7):
+            for day in range(6):  # Exclude Sunday
                 ws.cell(row=row, column=col).value = breakfast_sums[day]
                 ws.cell(row=row, column=col+1).value = lunch_sums[day]
                 ws.cell(row=row, column=col+2).value = dinner_sums[day]
