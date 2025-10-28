@@ -61,6 +61,7 @@ class ReportsTab(ttk.Frame):
             from openpyxl.styles import PatternFill
             yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
             red_fill = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
+            orange_fill = PatternFill(start_color="FFA500", end_color="FFA500", fill_type="solid")
 
             wb = openpyxl.Workbook()
             ws = wb.active
@@ -99,6 +100,7 @@ class ReportsTab(ttk.Frame):
             ws.cell(row=8, column=22).value = "Всего заявок"
             ws.cell(row=8, column=23).value = "Питание по заявке"
             ws.cell(row=8, column=24).value = "Питание без заявки"
+            ws.cell(row=8, column=24).fill = orange_fill
             ws.cell(row=8, column=25).value = "Процент посещений"
 
             # Data rows
@@ -134,6 +136,7 @@ class ReportsTab(ttk.Frame):
                             total_registered += 1
                         elif status == 'came_without_registration':
                             cell.value = 1
+                            cell.fill = orange_fill
                             came_without_registration += 1
                         elif status == 'not_registered':
                             cell.value = 0
