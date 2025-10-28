@@ -105,6 +105,12 @@ class ReportsTab(ttk.Frame):
 
             # Data rows
             row = 9
+            total_registered_sum = 0
+            came_with_reg_sum = 0
+            came_without_reg_sum = 0
+            breakfast_sums = [0] * 7  # For each day
+            lunch_sums = [0] * 7
+            dinner_sums = [0] * 7
             for idx, student_name in enumerate(sorted(student_data.keys()), start=1):
                 info = student_info.get(student_name, {'group': '', 'id': '', 'card_id': ''})
                 ws.cell(row=row, column=1).value = info['group'] or ""
@@ -133,6 +139,14 @@ class ReportsTab(ttk.Frame):
                             came_without_registration += 1
                         elif status == 'not_registered':
                             cell.value = 0
+                        # Sum registered for meals
+                        if status in ['came', 'didnt_come']:
+                            if meal_type == 0:
+                                breakfast_sums[day] += 1
+                            elif meal_type == 1:
+                                lunch_sums[day] += 1
+                            elif meal_type == 2:
+                                dinner_sums[day] += 1
                         col += 1
 
                 # Calculate total registered (didnt_come + came_with_registration)
@@ -161,7 +175,24 @@ class ReportsTab(ttk.Frame):
                 else:
                     cell_25.value = 0
 
+                # Sum for totals
+                total_registered_sum += total_registered
+                came_with_reg_sum += came_with_registration
+                came_without_reg_sum += came_without_registration
+
                 row += 1
+
+            # Add meal summary row
+            ws.cell(row=row, column=3).value = "Сводка"
+            col = 4
+            for day in range(7):
+                ws.cell(row=row, column=col).value = breakfast_sums[day]
+                ws.cell(row=row, column=col+1).value = lunch_sums[day]
+                ws.cell(row=row, column=col+2).value = dinner_sums[day]
+                col += 3
+            ws.cell(row=row, column=22).value = total_registered_sum
+            ws.cell(row=row, column=23).value = came_with_reg_sum
+            ws.cell(row=row, column=24).value = came_without_reg_sum
 
             filename = f"отчеты/Общая_таблица_посещаемости_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.xlsx"
             wb.save(filename)
