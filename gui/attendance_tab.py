@@ -24,14 +24,18 @@ class AttendanceTab(ttk.Frame):
         check_frame = ttk.LabelFrame(self, text="Проверка доступа")
         check_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        ttk.Label(check_frame, text="ID карты студента:", font=('Arial', 12)).pack(pady=10)
+        ttk.Label(check_frame, text="Приложите карточку студента:", font=('Arial', 16, 'bold')).pack(pady=20)
 
-        self.attendance_card_id = ttk.Entry(check_frame, font=('Arial', 14))
-        self.attendance_card_id.pack(pady=5, ipady=5)
+        self.attendance_card_id = ttk.Entry(check_frame, font=('Arial', 20))
+        self.attendance_card_id.pack(pady=5, ipady=10)
 
-        ttk.Button(check_frame, text="Проверить доступ", command=self.check_attendance).pack(pady=20)
+        btn_frame = ttk.Frame(check_frame)
+        btn_frame.pack(pady=20)
 
-        self.attendance_result = ttk.Label(check_frame, text="", font=('Arial', 16, 'bold'))
+        ttk.Button(btn_frame, text="Проверить доступ", command=self.check_attendance).pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text="Очистить", command=self.clear_input).pack(side=tk.LEFT, padx=10)
+
+        self.attendance_result = ttk.Label(check_frame, text="", font=('Arial', 24, 'bold'))
         self.attendance_result.pack(pady=20)
 
     def update_current_meal(self):
@@ -76,3 +80,8 @@ class AttendanceTab(ttk.Frame):
 
         # Clear the input
         self.attendance_card_id.delete(0, tk.END)
+
+    def clear_input(self):
+        """Clear the card ID input field"""
+        self.attendance_card_id.delete(0, tk.END)
+        self.attendance_result.config(text="")

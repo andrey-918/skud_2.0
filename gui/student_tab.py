@@ -18,7 +18,7 @@ class StudentTab(ttk.Frame):
         left_frame = ttk.Frame(self)
         left_frame.pack(side=tk.LEFT, fill=tk.Y, padx=10, pady=10)
 
-        ttk.Label(left_frame, text="Список студентов:", font=('Arial', 12, 'bold')).pack(pady=5)
+        ttk.Label(left_frame, text="Список студентов:", font=('Arial', 16, 'bold')).pack(pady=5)
 
         # Treeview for students
         columns = ('ID', 'Имя', 'Карта', 'Группа')
@@ -46,7 +46,7 @@ class StudentTab(ttk.Frame):
         right_frame = ttk.Frame(self)
         right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        ttk.Label(right_frame, text="Действия:", font=('Arial', 12, 'bold')).pack(pady=5)
+        ttk.Label(right_frame, text="Действия:", font=('Arial', 16, 'bold')).pack(pady=5)
 
         action_frame = ttk.LabelFrame(right_frame, text="Выберите действие")
         action_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)

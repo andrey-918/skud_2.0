@@ -1,0 +1,8 @@
+- [ ] Modify gui.py: Set window size to 1200x800, create only Attendance and Settings tabs, default to Attendance tab
+- [ ] Create gui/settings_tab.py: SettingsTab class with threshold setting, export attendance button, import meals button, student management button opening Toplevel window
+- [ ] Modify gui/attendance_tab.py: Change prompt to "Приложите карточку студента", increase font sizes for input and result, add clear button
+- [ ] Modify gui/student_tab.py: Remove font options from buttons for compatibility
+- [ ] Modify gui/registration_tab.py: Remove font options from buttons/labels for compatibility
+- [ ] Modify gui/reports_tab.py: Remove font options from buttons for compatibility
+- [ ] Create 'отчеты' directory for exports
+- [ ] Test the GUI: Run main.py, check tabs, attendance input, settings functions

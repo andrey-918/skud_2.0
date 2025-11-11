@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import sqlite3
 import openpyxl
-from db.student import finding_card, add_registration, find_student_by_name_group
+from db.student import find_student_by_name, finding_card, add_registration, find_student_by_name_group
 
 class RegistrationTab(ttk.Frame):
     def __init__(self, parent):
@@ -153,6 +153,9 @@ class RegistrationTab(ttk.Frame):
                 if name and isinstance(name, str) and name.strip():
                     group_str = group.strip() if group and isinstance(group, str) else ""
                     student_id = find_student_by_name_group(name.strip(), group_str)
+                    if not student_id:
+                        # Try without group if not found
+                        student_id = find_student_by_name(name.strip())
                     if student_id:
                         # Import registrations
                         for d in d_list:
